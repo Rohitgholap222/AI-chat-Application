@@ -1,16 +1,60 @@
-# React + Vite
+# 🤖 AI Chat Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A full-stack AI Chat Application built using **React**, **FastAPI**, **LangChain**, and **Hugging Face**.
 
-Currently, two official plugins are available:
+The application allows users to send messages through a React-based chat interface. The message is sent to a FastAPI backend, processed using LangChain and a Hugging Face language model, and the AI-generated response is displayed in the chat UI.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🚀 Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 💬 Interactive chat interface
+- ⚛️ React + Vite frontend
+- 🎨 Tailwind CSS UI
+- ⚡ FastAPI backend
+- 🧠 LangChain integration
+- 🤗 Hugging Face language model
+- 🔄 Real-time request and response flow
+- ⌨️ Send messages using the **Send** button or **Enter** key
+- ⏳ Loading state while AI generates a response
+- 🛡️ CORS configuration for frontend-backend communication
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 🏗️ Project Architecture
+
+```text
+┌──────────────────┐
+│  React Frontend  │
+│                  │
+│   Chat Interface │
+└────────┬─────────┘
+         │
+         │ POST /chat
+         ▼
+┌──────────────────┐
+│ FastAPI Backend  │
+│                  │
+│  API Endpoint    │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│    LangChain     │
+│                  │
+│ ChatHuggingFace  │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│   Hugging Face   │
+│       LLM        │
+└────────┬─────────┘
+         │
+         ▼
+    AI Response
+         │
+         ▼
+┌──────────────────┐
+│ React Chat UI    │
+└──────────────────┘
