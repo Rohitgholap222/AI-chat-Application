@@ -9,16 +9,17 @@ from langchain_huggingface import (
 
 from dotenv import load_dotenv
 
-# Load .env variables
 load_dotenv()
 
 app = FastAPI()
+
 
 # Allow React frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -26,12 +27,10 @@ app.add_middleware(
 )
 
 
-# Request model
 class ChatRequest(BaseModel):
     message: str
 
 
-# Hugging Face model
 llm = HuggingFaceEndpoint(
     repo_id="openai/gpt-oss-20b",
     task="text-generation"
@@ -40,7 +39,6 @@ llm = HuggingFaceEndpoint(
 model = ChatHuggingFace(llm=llm)
 
 
-# API endpoint
 @app.post("/chat")
 def chat(request: ChatRequest):
 

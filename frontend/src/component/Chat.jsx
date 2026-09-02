@@ -6,11 +6,11 @@ function Chat() {
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || loading) return;
 
     const userMessage = {
       role: "user",
-      content: message
+      content: message,
     };
 
     // Add user message
@@ -25,11 +25,11 @@ function Chat() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            message: message
-          })
+            message: message,
+          }),
         }
       );
 
@@ -37,7 +37,7 @@ function Chat() {
 
       const aiMessage = {
         role: "assistant",
-        content: data.response
+        content: data.response,
       };
 
       // Add AI response
@@ -50,64 +50,108 @@ function Chat() {
         ...prev,
         {
           role: "assistant",
-          content: "Something went wrong!"
-        }
+          content: "Something went wrong!",
+        },
       ]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="container">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
 
-      <h1>🤖 AI Chat App</h1>
+      <div className="flex h-[700px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
 
-      <div className="chat-container">
+        {/* Header */}
+        <div className="border-b bg-blue-600 px-6 py-5 text-white">
+          <h1 className="text-2xl font-bold">
+            🤖 AI Chat App
+          </h1>
 
-        {messages.length === 0 && (
-          <p>Ask me anything!</p>
-        )}
+          <p className="text-sm text-blue-100">
+            Ask me anything
+          </p>
+        </div>
 
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`message ${msg.role}`}
-          >
-            <strong>
-              {msg.role === "user" ? "You" : "AI"}:
-            </strong>
+        {/* Chat Messages */}
+        <div className="flex-1 space-y-4 overflow-y-auto bg-gray-50 p-6">
 
-            <p>{msg.content}</p>
+          {messages.length === 0 && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-lg text-gray-400">
+                👋 Ask me anything!
+              </p>
+            </div>
+          )}
+
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex ${
+                msg.role === "user"
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
+            >
+              <div
+                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
+                  msg.role === "user"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-800"
+                }`}
+              >
+                <p className="mb-1 text-xs font-semibold opacity-70">
+                  {msg.role === "user" ? "You" : "AI Assistant"}
+                </p>
+
+                <p className="whitespace-pre-wrap">
+                  {msg.content}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          {/* Loading */}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                🤖 AI is thinking...
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* Input */}
+        <div className="border-t bg-white p-4">
+          <div className="flex gap-3">
+
+            <input
+              type="text"
+              value={message}
+              placeholder="Ask something..."
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  sendMessage();
+                }
+              }}
+              className="flex-1 rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            />
+
+            <button
+              onClick={sendMessage}
+              disabled={loading}
+              className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "..." : "Send"}
+            </button>
+
           </div>
-        ))}
-
-        {loading && (
-          <p>🤖 AI is thinking...</p>
-        )}
+        </div>
 
       </div>
-
-      <div className="input-container">
-
-        <input
-          type="text"
-          value={message}
-          placeholder="Ask something..."
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              sendMessage();
-            }
-          }}
-        />
-
-        <button onClick={sendMessage}>
-          Send
-        </button>
-
-      </div>
-
     </div>
   );
 }
