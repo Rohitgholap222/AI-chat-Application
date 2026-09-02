@@ -266,7 +266,7 @@ function Chat() {
             </svg>
           </div>
           <div>
-            <p className="chat-title">Aria</p>
+            <p className="chat-title">Langchain Chat Application - Using Huggingface</p>
             <p className="chat-subtitle">{loading ? "Typing…" : "Ready to help"}</p>
           </div>
         </div>
