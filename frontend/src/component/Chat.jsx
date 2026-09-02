@@ -20,18 +20,22 @@ function Chat() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/chat",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: message,
-          }),
-        }
-      );
+      const response = await fetch("http://127.0.0.1:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: message,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Request failed");
+      }
+
+
 
       const data = await response.json();
 
@@ -88,18 +92,16 @@ function Chat() {
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${
-                msg.role === "user"
+              className={`flex ${msg.role === "user"
                   ? "justify-end"
                   : "justify-start"
-              }`}
+                }`}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
-                  msg.role === "user"
+                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${msg.role === "user"
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-800"
-                }`}
+                  }`}
               >
                 <p className="mb-1 text-xs font-semibold opacity-70">
                   {msg.role === "user" ? "You" : "AI Assistant"}
