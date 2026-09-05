@@ -1,55 +1,126 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../api/baseurl";
 
+import Sidebar from "../components/Sidebar";
 import ChatHeader from "../components/ChatHeader";
 import ChatMessages from "../components/ChatMessages";
 import ChatInput from "../components/ChatInput";
 
 function Chat() {
-  const [message, setMessage] = useState("");
+  const [chats, setChats] = useState(() => {
+    const savedChats = localStorage.getItem("ai-chats");
 
-  const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem("chatMessages");
+    return savedChats ? JSON.parse(savedChats) : [];
+  });
 
-    return savedMessages ? JSON.parse(savedMessages) : [];
+  const [activeChatId, setActiveChatId] = useState(() => {
+    return localStorage.getItem("active-chat-id") || null;
   });
 
   const [loading, setLoading] = useState(false);
 
   const scrollRef = useRef(null);
 
+  const activeChat = chats.find(
+    (chat) => chat.id === activeChatId
+  );
+
+  // Save chats
   useEffect(() => {
     localStorage.setItem(
-      "chatMessages",
-      JSON.stringify(messages)
+      "ai-chats",
+      JSON.stringify(chats)
     );
-  }, [messages]);
+  }, [chats]);
 
+  // Save active chat
+  useEffect(() => {
+    if (activeChatId) {
+      localStorage.setItem(
+        "active-chat-id",
+        activeChatId
+      );
+    }
+  }, [activeChatId]);
+
+  // Auto scroll
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages, loading]);
+  }, [activeChat?.messages, loading]);
 
-  const sendMessage = async () => {
-    const trimmedMessage = message.trim();
+  // Create new chat
+  const createNewChat = () => {
+    const newChat = {
+      id: Date.now().toString(),
+      title: "New Conversation",
+      messages: [],
+    };
 
-    if (!trimmedMessage || loading) return;
+    setChats((prev) => [newChat, ...prev]);
+
+    setActiveChatId(newChat.id);
+  };
+
+  // Delete chat
+  const deleteChat = (id) => {
+    setChats((prev) =>
+      prev.filter((chat) => chat.id !== id)
+    );
+
+    if (id === activeChatId) {
+      setActiveChatId(null);
+    }
+  };
+
+  // Send message
+  const sendMessage = async (message) => {
+    if (!message.trim() || loading) return;
+
+    // Create chat automatically
+    let currentChatId = activeChatId;
+
+    if (!currentChatId) {
+      const newChat = {
+        id: Date.now().toString(),
+        title: message.slice(0, 30),
+        messages: [],
+      };
+
+      setChats((prev) => [newChat, ...prev]);
+
+      setActiveChatId(newChat.id);
+
+      currentChatId = newChat.id;
+    }
 
     const userMessage = {
       role: "user",
-      content: trimmedMessage,
+      content: message,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Add user message
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === currentChatId
+          ? {
+              ...chat,
+              messages: [
+                ...chat.messages,
+                userMessage,
+              ],
+            }
+          : chat
+      )
+    );
 
-    setMessage("");
     setLoading(true);
 
     try {
       const { data } = await api.post("/chat", {
-        message: trimmedMessage,
+        message,
       });
 
       const aiMessage = {
@@ -57,48 +128,70 @@ function Chat() {
         content: data.response,
       };
 
-      setMessages((prev) => [...prev, aiMessage]);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === currentChatId
+            ? {
+                ...chat,
+                messages: [
+                  ...chat.messages,
+                  aiMessage,
+                ],
+              }
+            : chat
+        )
+      );
 
     } catch (error) {
       console.error(error);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Something went wrong. Please try again.",
-          isError: true,
-        },
-      ]);
+      const errorMessage = {
+        role: "assistant",
+        content: "Something went wrong. Please try again.",
+        isError: true,
+      };
+
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === currentChatId
+            ? {
+                ...chat,
+                messages: [
+                  ...chat.messages,
+                  errorMessage,
+                ],
+              }
+            : chat
+        )
+      );
+
     } finally {
       setLoading(false);
     }
   };
 
-  const clearChat = () => {
-    localStorage.removeItem("chatMessages");
-    setMessages([]);
-  };
-
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#0b1018] px-4 py-6">
+    <main className="flex min-h-screen bg-[#0b1018]">
 
-      <section className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-[#242b38] bg-[#151b27] shadow-2xl">
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        setActiveChatId={setActiveChatId}
+        createNewChat={createNewChat}
+        deleteChat={deleteChat}
+      />
 
-        <ChatHeader
-          loading={loading}
-          clearChat={clearChat}
-        />
+      <section className="flex flex-1 flex-col">
+
+        <ChatHeader />
 
         <ChatMessages
-          messages={messages}
+          messages={activeChat?.messages || []}
           loading={loading}
           scrollRef={scrollRef}
         />
 
         <ChatInput
-          message={message}
-          setMessage={setMessage}
           sendMessage={sendMessage}
           loading={loading}
         />

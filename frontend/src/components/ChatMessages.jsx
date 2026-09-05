@@ -9,11 +9,12 @@ function ChatMessages({
   return (
     <div
       ref={scrollRef}
-      className="flex flex-1 flex-col overflow-y-auto px-6 py-8"
+      className="flex flex-1 flex-col overflow-y-auto bg-[#151b27] px-6 py-8"
     >
       {messages.length === 0 ? (
 
         <div className="flex flex-1 items-center justify-center">
+
           <div className="max-w-md text-center">
 
             <h2 className="text-xl font-semibold text-[#d8dce5]">
@@ -26,11 +27,13 @@ function ChatMessages({
             </p>
 
           </div>
+
         </div>
 
       ) : (
 
-        <div className="space-y-6">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
+
           {messages.map((message, index) => (
             <MessageBubble
               key={index}
@@ -39,6 +42,7 @@ function ChatMessages({
           ))}
 
           {loading && <TypingIndicator />}
+
         </div>
 
       )}
