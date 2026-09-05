@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+
 import api from "../api/baseurl";
 
 import Sidebar from "../components/Sidebar";
@@ -9,7 +10,6 @@ import ChatInput from "../components/ChatInput";
 function Chat() {
   const [chats, setChats] = useState(() => {
     const savedChats = localStorage.getItem("ai-chats");
-
     return savedChats ? JSON.parse(savedChats) : [];
   });
 
@@ -21,11 +21,12 @@ function Chat() {
 
   const scrollRef = useRef(null);
 
+  // Get active chat
   const activeChat = chats.find(
     (chat) => chat.id === activeChatId
   );
 
-  // Save chats
+  // Save chats to localStorage
   useEffect(() => {
     localStorage.setItem(
       "ai-chats",
@@ -33,17 +34,19 @@ function Chat() {
     );
   }, [chats]);
 
-  // Save active chat
+  // Save active chat ID
   useEffect(() => {
     if (activeChatId) {
       localStorage.setItem(
         "active-chat-id",
         activeChatId
       );
+    } else {
+      localStorage.removeItem("active-chat-id");
     }
   }, [activeChatId]);
 
-  // Auto scroll
+  // Auto scroll to bottom
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -79,34 +82,59 @@ function Chat() {
   const sendMessage = async (message) => {
     if (!message.trim() || loading) return;
 
-    // Create chat automatically
     let currentChatId = activeChatId;
+    let currentMessages = [];
 
+    // Create chat automatically if no active chat
     if (!currentChatId) {
       const newChat = {
         id: Date.now().toString(),
-        title: message.slice(0, 30),
+        title:
+          message.length > 40
+            ? message.substring(0, 40) + "..."
+            : message,
         messages: [],
       };
 
       setChats((prev) => [newChat, ...prev]);
-
       setActiveChatId(newChat.id);
 
       currentChatId = newChat.id;
+    } else {
+      const currentChat = chats.find(
+        (chat) => chat.id === currentChatId
+      );
+
+      currentMessages = currentChat?.messages || [];
     }
 
+    // User message
     const userMessage = {
       role: "user",
       content: message,
     };
 
-    // Add user message
+    // Full conversation history
+    const conversationHistory = [
+      ...currentMessages,
+      userMessage,
+    ];
+
+    // Add user message to UI
     setChats((prev) =>
       prev.map((chat) =>
         chat.id === currentChatId
           ? {
               ...chat,
+
+              // Use first prompt as chat title
+              title:
+                chat.messages.length === 0
+                  ? message.length > 40
+                    ? message.substring(0, 40) + "..."
+                    : message
+                  : chat.title,
+
               messages: [
                 ...chat.messages,
                 userMessage,
@@ -119,15 +147,18 @@ function Chat() {
     setLoading(true);
 
     try {
+      // Send conversation to backend
       const { data } = await api.post("/chat", {
-        message,
+        messages: conversationHistory,
       });
 
+      // AI response
       const aiMessage = {
         role: "assistant",
         content: data.response,
       };
 
+      // Add AI response
       setChats((prev) =>
         prev.map((chat) =>
           chat.id === currentChatId
@@ -141,16 +172,17 @@ function Chat() {
             : chat
         )
       );
-
     } catch (error) {
       console.error(error);
 
       const errorMessage = {
         role: "assistant",
-        content: "Something went wrong. Please try again.",
+        content:
+          "Something went wrong. Please try again.",
         isError: true,
       };
 
+      // Add error message
       setChats((prev) =>
         prev.map((chat) =>
           chat.id === currentChatId
@@ -164,7 +196,6 @@ function Chat() {
             : chat
         )
       );
-
     } finally {
       setLoading(false);
     }
@@ -172,7 +203,6 @@ function Chat() {
 
   return (
     <main className="flex min-h-screen bg-[#0b1018]">
-
       <Sidebar
         chats={chats}
         activeChatId={activeChatId}
@@ -182,7 +212,6 @@ function Chat() {
       />
 
       <section className="flex flex-1 flex-col">
-
         <ChatHeader />
 
         <ChatMessages
@@ -195,11 +224,9 @@ function Chat() {
           sendMessage={sendMessage}
           loading={loading}
         />
-
       </section>
-
     </main>
   );
 }
 
-export default Chat;
+export default Chat; 

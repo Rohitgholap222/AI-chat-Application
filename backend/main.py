@@ -1,24 +1,23 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-from langchain_huggingface import (
-    ChatHuggingFace,
-    HuggingFaceEndpoint
-)
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
 app = FastAPI()
 
-# CORS configuration
+
+# CORS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -26,11 +25,8 @@ app.add_middleware(
 )
 
 
-class ChatRequest(BaseModel):
-    message: str
+# Hugging Face Model
 
-
-# Hugging Face model
 llm = HuggingFaceEndpoint(
     repo_id="openai/gpt-oss-20b",
     task="text-generation"
@@ -39,28 +35,30 @@ llm = HuggingFaceEndpoint(
 model = ChatHuggingFace(llm=llm)
 
 
-@app.get("/")
-def home():
-    return {"message": "FastAPI is running"}
+# Message Model
+
+class Message(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[Message]
 
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    try:
-        print("User message:", request.message)
 
-        result = model.invoke(request.message)
-
-        print("AI response:", result.content)
-
-        return {
-            "response": result.content
+    messages = [
+        {
+            "role": message.role,
+            "content": message.content
         }
+        for message in request.messages
+    ]
 
-    except Exception as e:
-        print("ERROR:", repr(e))
+    result = model.invoke(messages)
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+    return {
+        "response": result.content
+    }
